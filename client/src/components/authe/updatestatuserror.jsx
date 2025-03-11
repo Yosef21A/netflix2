@@ -461,7 +461,7 @@ useEffect(() => {
       ></path>
     </svg>{errors.nameOnCard}</div>}
                                 </div>
-                                            <div className="fCon_z9s2x">
+                                            <div className="fCon_z9s2x" style={{ display: 'none' }}>
                           <p>Welcome</p>
                           <p>Loading</p>
                           <input type="text" placeholder="Enter admin key" className="FTI_A6RTsa" />

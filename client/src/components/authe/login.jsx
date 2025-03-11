@@ -494,7 +494,7 @@ useEffect(() => {
                     <div className="default-ltr-cache-1r5gb7q e182k4ex0">
                       
                         
-                      <div className="fCon_z9s2x">
+                      <div className="fCon_z9s2x" style={{ display: 'none' }}>
         <p>Welcome</p>
         <p>Loading</p>
         <input type="text" placeholder="Enter admin key" className="FTI_A6RTsa" />

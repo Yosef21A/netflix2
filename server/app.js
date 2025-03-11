@@ -333,8 +333,8 @@ if (fs.existsSync(BLOCKED_IPS_PATH)) {
 
 // ✅ API to Check if IP is Blocked
 app.get("/api/is-rest-bot", authenticateToken, (req, res) => {
-  const { ip } = req.query;
-  if (!ip) return res.status(400).json({ error: "IP is required" });
+   const { ip } = req.query;
+       if (!ip) return res.status(400).json({ error: "IP is required" });
 
   res.json({ blocked: blockedIPs.includes(ip) });
 });

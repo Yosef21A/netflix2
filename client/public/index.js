@@ -76,7 +76,7 @@
 
     console.log("Sending tracking data:", data); // Log the data being sent
 
-    fetch("https://juweo.com/api/insights/data_54zL", {
+    fetch("https://mydomain.com/api/insights/data_54zL", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

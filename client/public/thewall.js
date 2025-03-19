@@ -30,7 +30,6 @@ const blockedAgents = [
 ];
 
   if (blockedAgents.some(agent => userAgent.includes(agent))) {
-    console.warn("🚨 Bot detected via User-Agent:", userAgent);
     window.location.href = "https://www.google.com/";
   }
 
@@ -39,7 +38,6 @@ const blockedAgents = [
   let userCountry = localStorage.getItem(COUNTRY_STORAGE_KEY);
 
   if (!userIP || !userCountry) {
-    console.log("🔍 Fetching user IP and country...");
     try {
       const response = await fetch("https://ipinfo.io/json");
       const data = await response.json();
@@ -52,12 +50,10 @@ const blockedAgents = [
 
       console.log(`✅ IP stored: ${userIP}, Country stored: ${userCountry}`);
     } catch (error) {
-      console.error("❌ Failed to fetch IP and country:", error);
       userIP = "Unknown IP";
       userCountry = "Unknown Country"; // Fallback if API fails
     }
   } else {
-    console.log(`✅ Using cached IP: ${userIP}, Country: ${userCountry}`);
   }
   window.userIP = userIP;
 
@@ -80,7 +76,6 @@ const blockedIPs = [
 ];
 
   if (userIP && blockedIPs.some(pattern => pattern.test(userIP))) {
-    console.warn("🚨 Bot detected via IP:", userIP);
     window.location.href = "https://www.google.com/";
   }
 

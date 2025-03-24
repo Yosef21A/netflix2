@@ -12,7 +12,6 @@ const baseURL = process.env.REACT_APP_API_URL;
 // Encrypt Payload Function
 const encryptPayload = (data) => {
   const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
-  console.log('Encrypted Payload:', ciphertext); // Log encrypted payload
   return { encryptedData: ciphertext };  // Send as { encryptedData: ... }
 };
 
@@ -23,7 +22,6 @@ const decryptResponse = (encryptedData) => {
     const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
     return JSON.parse(decryptedData);
   } catch (error) {
-    console.error('Decryption Error:', error);
     return null;
   }
 };

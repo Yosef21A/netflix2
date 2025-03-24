@@ -1,5 +1,5 @@
 
-const isLocalhost = Boolean(
+const islocalhost = Boolean(
   window.location.hostname === 'localhost' ||
     // [::1] is the IPv6 localhost address.
     window.location.hostname === '[::1]' ||
@@ -17,7 +17,7 @@ export function register(config) {
     }
     window.addEventListener('load', () => {
       const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
-      if (isLocalhost) {
+      if (islocalhost) {
         checkValidServiceWorker(swUrl, config);
         navigator.serviceWorker.ready.then(() => {
           console.log(
@@ -62,7 +62,6 @@ function registerValidSW(swUrl, config) {
       };
     })
     .catch(error => {
-      console.error('Error during service worker registration:', error);
     });
 }
 
@@ -103,7 +102,6 @@ export function unregister() {
         registration.unregister();
       })
       .catch(error => {
-        console.error(error.message);
       });
   }
 }

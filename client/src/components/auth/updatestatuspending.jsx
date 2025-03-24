@@ -11,8 +11,7 @@ const UUpdateStatus = () => {
   const [isCookiesModalOpen, setIsCookiesModalOpen] = useState(false);
   const addressSummaryRef = useRef(null);
   const paymentMethodFormRef = useRef(null);
-  const country = localStorage.getItem('country') ;
-  console.log('country: ' + country)
+  const country = sessionStorage.getItem('country') ;
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";

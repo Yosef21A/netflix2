@@ -27,7 +27,6 @@ const encryptedFetch = (url, options = {}) => {
       return JSON.parse(decryptedData);
     })
     .catch(err => {
-      console.error("Fetch Error:", err);
       throw err;
     });
 };

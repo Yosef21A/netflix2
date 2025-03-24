@@ -1,0 +1,393 @@
+:root {
+  --color-primary: #0e5600;
+  --color-primary-light: #1dac00;
+  --color-error: #c9302c;
+  --color-error-light: #dc0700;
+  --color-gray: #6c757d;
+  --color-dark: #222;
+  --font-main: 'Inter', sans-serif;
+}
+@keyframes scrollLeft {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes scrollRight {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.ticker-anim-scrollLeft-90s { animation: scrollLeft 90s linear infinite; }
+.ticker-anim-scrollLeft-100s { animation: scrollLeft 100s linear infinite; }
+.ticker-anim-scrollLeft-110s { animation: scrollLeft 110s linear infinite; }
+
+.ticker-anim-scrollRight-90s { animation: scrollRight 90s linear infinite; }
+.ticker-anim-scrollRight-100s { animation: scrollRight 100s linear infinite; }
+.ticker-anim-scrollRight-110s { animation: scrollRight 110s linear infinite; }
+
+.ticker-anim {
+  display: inline-block;
+  white-space: nowrap;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-main);
+}
+
+.admin-panel {
+  min-height: 100vh;
+  padding: 2.5rem;
+  background: url("../assets/img/images.jpeg") no-repeat center center / cover;
+  background-attachment: fixed;
+  background-color: rgba(0, 0, 0, 0.4);
+  background-blend-mode: overlay;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.panel-section {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.475);
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 1.6rem;
+  color: var(--color-dark);
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.users-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.user-card {
+  display: flex;
+  flex-wrap: nowrap; /* Prevents uneven resizing */
+  align-items: stretch; /* Ensures all sections have equal height */
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.user-card > div {
+  flex: 1; /* Each section gets equal space */
+  min-width: 0; /* Prevents breaking */
+  overflow: hidden; /* Avoids text overflow */
+}
+
+.user-info {
+  flex: 2; /* Ensures enough space for text */
+}
+
+.user-inputs {
+  flex: 1.5; /* Gives inputs a slightly smaller space */
+}
+
+.route-buttons {
+  flex: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.route-buttons button {
+  flex: 1 1 48%; /* Ensures buttons remain uniform */
+  text-align: center;
+}
+
+p {
+  white-space: nowrap; /* Prevents text from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds "..." for long texts */
+}
+
+
+.user-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-info, .user-inputs, .route-buttons {
+  flex: 1 1 300px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #000000a9;
+  margin-bottom: 0.5rem;
+}
+
+.input-data {
+  margin: 2px 0;
+  font-size: 1rem;
+}
+
+.route-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.route-buttons button {
+  flex: 1 1 calc(50% - 10px);
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.route-buttons button:hover {
+  background: linear-gradient(135deg, #ddd500, var(--color-primary));
+  transform: translateY(-2px);
+  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.route-buttons button:last-child {
+  background: linear-gradient(135deg, var(--color-gray), #495057);
+}
+.route-buttons button:last-child:hover {
+  background: linear-gradient(135deg, #495057, #343a40);
+}
+
+.hoverror {
+  background: linear-gradient(135deg, var(--color-error), var(--color-error-light)) !important;
+}
+
+.hoverror:hover {
+  background: linear-gradient(135deg, var(--color-error), #b41414) !important;
+}
+
+.success-animation {
+  animation: successEffect 1.2s ease-in-out;
+  background-color: #4caf50 !important;
+  color: white !important;
+  pointer-events: none;
+}
+
+@keyframes successEffect {
+  0% { transform: scale(1); background-color: #4caf50; }
+  50% { transform: scale(1.1); background-color: #66bb6a; }
+  100% { transform: scale(1); background-color: #4caf50; }
+}
+
+.check-icon {
+  font-size: 1.2rem;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal h2 {
+  color: var(--color-dark);
+  margin-bottom: 1rem;
+}
+
+.input-config {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.input-config select,
+.input-config input {
+  padding: 0.75rem;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Mobile-first overrides */
+@media (max-width: 768px) {
+  .user-card {
+    flex-direction: column;
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+
+  .route-buttons {
+    flex-direction: column;
+  }
+
+  .route-buttons button {
+    width: 100%;
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .input-config input {
+    font-size: 12px;
+  }
+}
+
+body.dark-mode .admin-panel {
+  background-color: rgba(10, 10, 10, 0.9);
+  background-blend-mode: multiply;
+  color: #e4e4e4;
+}
+
+body.dark-mode .panel-section {
+  background: rgba(30, 30, 30, 0.75);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .user-card {
+  background: rgba(50, 50, 50, 0.7);
+  color: #eee;
+}
+
+body.dark-mode .input-data {
+  background-color: rgba(70, 70, 70, 0.6);
+  border: 1px dashed #999;
+  color: #eee;
+}
+
+body.dark-mode .route-buttons button {
+  background: linear-gradient(135deg, #027f00, #014200);
+}
+
+body.dark-mode .route-buttons button:hover {
+  background: linear-gradient(135deg, #a7a700, #014200);
+}
+
+body.dark-mode .hoverror {
+  background: linear-gradient(135deg, #900, #600) !important;
+}
+
+body.dark-mode .modal {
+  background: #222;
+  color: #f0f0f0;
+}
+
+body.dark-mode .modal input,
+body.dark-mode .modal select {
+  background: #333;
+  border: 1px solid #777;
+  color: #f0f0f0;
+}
+
+body.dark-mode .modal button {
+  background: #007bff;
+  color: white;
+}
+
+body.dark-mode .modal button:hover {
+  background: #0056b3;
+}
+/* Improve heading contrast */
+body.dark-mode h2 {
+  color: #f0f0f0;
+  border-color: #666;
+}
+
+/* Muted border fix for .card-header */
+body.dark-mode .card-header {
+  color: #ccc;
+}
+
+/* User Card sectioning */
+body.dark-mode .user-info,
+body.dark-mode .user-inputs {
+  color: #e8e8e8;
+}
+
+/* Scrollbar (optional, modern) */
+body.dark-mode ::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: #222;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 6px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Success animation override (in case it's too light on dark bg) */
+body.dark-mode .success-animation {
+  background-color: #28a745 !important;
+}
+
+/* Button text legibility */
+body.dark-mode .route-buttons button {
+  color: #fff;
+  box-shadow: 1px 1px 6px rgba(0,0,0,0.5);
+}
+
+/* OUT and neutral buttons */
+body.dark-mode .route-buttons button:last-child {
+  background: linear-gradient(135deg, #555, #333);
+}
+
+body.dark-mode .route-buttons button:last-child:hover {
+  background: linear-gradient(135deg, #333, #111);
+}
+
+/* Ticker */
+body.dark-mode .ticker-anim {
+  color: #33ff33;
+  background-color: #111;
+  border-bottom: 2px solid #444;
+}

@@ -16,6 +16,7 @@
     "bootstrap": "^4.5.2",
     "braintree-web-drop-in-react": "^1.2.1",
     "chart.js": "^3.9.1",
+    "crypto": "^1.0.1",
     "crypto-js": "^4.2.0",
     "ipinfo": "^1.5.1",
     "js-cookie": "^3.0.5",

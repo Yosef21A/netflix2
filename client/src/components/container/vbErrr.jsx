@@ -260,7 +260,7 @@ useEffect(() => {
           attempts++;
       }
   
-      return `api/${encodedTimestamp}`;
+      return `${encodedTimestamp}`;
   };
   
   useEffect(() => {
